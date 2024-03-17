@@ -3,7 +3,7 @@ module github.com/Zhiyenbek/sp-positions-main-service
 go 1.20
 
 require (
-	github.com/Zhiyenbek/users-auth-service v0.0.0-20240311113917-5a1e7408b7f1
+	github.com/Zhiyenbek/users-auth-service v0.0.0-20240317152414-a89a43d4d83e
 	github.com/creasty/defaults v1.7.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.8.1

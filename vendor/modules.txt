@@ -1,4 +1,4 @@
-# github.com/Zhiyenbek/users-auth-service v0.0.0-20240311113917-5a1e7408b7f1
+# github.com/Zhiyenbek/users-auth-service v0.0.0-20240317152414-a89a43d4d83e
 ## explicit; go 1.20
 github.com/Zhiyenbek/users-auth-service/config
 github.com/Zhiyenbek/users-auth-service/internal/handler/http

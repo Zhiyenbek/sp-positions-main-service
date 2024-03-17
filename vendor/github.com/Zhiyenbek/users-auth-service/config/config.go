@@ -49,7 +49,7 @@ type TokenConf struct {
 }
 
 func New() (*Configs, error) {
-	configFile := "../config/config.yaml"
+	configFile := "config/config.yaml"
 	viper.SetConfigFile(configFile)
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err

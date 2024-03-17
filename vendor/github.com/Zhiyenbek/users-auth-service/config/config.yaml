@@ -1,5 +1,5 @@
 app:
-  port: 3000
+  port: 3001
   timeout: 60s
 db:
   host: localhost

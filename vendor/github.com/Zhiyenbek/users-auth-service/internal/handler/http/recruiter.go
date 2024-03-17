@@ -57,19 +57,16 @@ func (h *handler) RecruiterSignIn(c *gin.Context) {
 		c.JSON(400, sendResponse(-1, nil, models.ErrWrongCredential))
 		return
 	}
-	var errMsg error
 	tokens, err := h.service.AuthService.RecruiterLogin(req)
 	if err != nil {
 		h.logger.Errorf("Error occurred while login: %v", err)
 		switch {
 		case errors.Is(err, models.ErrWrongCredential):
-			errMsg = models.ErrWrongCredential
+			c.JSON(http.StatusBadRequest, sendResponse(-1, nil, models.ErrWrongCredential))
 		default:
-			c.JSON(500, sendResponse(-1, nil, models.ErrInternalServer))
+			c.JSON(http.StatusInternalServerError, sendResponse(-1, nil, models.ErrInternalServer))
 			return
 		}
-		c.JSON(200, sendResponse(-1, nil, errMsg))
-		return
 	}
 	c.SetCookie("access_token", tokens.AccessToken.TokenValue, int(tokens.AccessToken.TTL.Seconds()), "/", h.cfg.Token.Access.Domain, true, true)
 	c.SetCookie("refresh_token", tokens.RefreshToken.TokenValue, int(tokens.RefreshToken.TTL.Seconds()), "/refresh-token", h.cfg.Token.Refresh.Domain, true, true)
