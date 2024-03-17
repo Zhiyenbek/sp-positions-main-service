@@ -4,17 +4,20 @@ import (
 	handler "github.com/Zhiyenbek/users-auth-service/internal/handler/http"
 	"github.com/Zhiyenbek/users-auth-service/internal/models"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
-func VerifyToken(tokenSecret string) gin.HandlerFunc {
+func VerifyToken(tokenSecret string, log *zap.SugaredLogger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		jwtToken, err := c.Cookie("access_token")
 		if err != nil {
+			log.Error("cookie not found")
 			c.AbortWithStatusJSON(401, sendResponse(-1, nil, models.ErrInvalidToken))
 			return
 		}
 		token, err := handler.ParseAuthToken(jwtToken, tokenSecret)
 		if err != nil {
+			log.Error("token is invalid", err)
 			c.AbortWithStatusJSON(401, sendResponse(-1, nil, models.ErrInvalidToken))
 			return
 		}
