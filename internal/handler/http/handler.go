@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"github.com/Zhiyenbek/sp_positions_main_service/config"
-	"github.com/Zhiyenbek/sp_positions_main_service/internal/service"
+	"github.com/Zhiyenbek/sp-positions-main-service/config"
+	"github.com/Zhiyenbek/sp-positions-main-service/internal/service"
 	"github.com/Zhiyenbek/users-auth-service/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

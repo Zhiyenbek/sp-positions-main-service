@@ -9,11 +9,11 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/Zhiyenbek/sp_positions_main_service/config"
-	handler "github.com/Zhiyenbek/sp_positions_main_service/internal/handler/http"
-	"github.com/Zhiyenbek/sp_positions_main_service/internal/repository"
-	"github.com/Zhiyenbek/sp_positions_main_service/internal/repository/connection"
-	"github.com/Zhiyenbek/sp_positions_main_service/internal/service"
+	"github.com/Zhiyenbek/sp-positions-main-service/config"
+	handler "github.com/Zhiyenbek/sp-positions-main-service/internal/handler/http"
+	"github.com/Zhiyenbek/sp-positions-main-service/internal/repository"
+	"github.com/Zhiyenbek/sp-positions-main-service/internal/repository/connection"
+	"github.com/Zhiyenbek/sp-positions-main-service/internal/service"
 	"go.uber.org/zap"
 )
 

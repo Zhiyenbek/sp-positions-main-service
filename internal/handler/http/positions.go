@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Zhiyenbek/sp_positions_main_service/internal/models"
+	"github.com/Zhiyenbek/sp-positions-main-service/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 )

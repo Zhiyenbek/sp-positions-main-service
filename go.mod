@@ -1,4 +1,4 @@
-module github.com/Zhiyenbek/sp_positions_main_service
+module github.com/Zhiyenbek/sp-positions-main-service
 
 go 1.20
 

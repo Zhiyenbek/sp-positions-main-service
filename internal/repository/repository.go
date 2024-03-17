@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"github.com/Zhiyenbek/sp_positions_main_service/config"
-	"github.com/Zhiyenbek/sp_positions_main_service/internal/models"
+	"github.com/Zhiyenbek/sp-positions-main-service/config"
+	"github.com/Zhiyenbek/sp-positions-main-service/internal/models"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"go.uber.org/zap"
 )
