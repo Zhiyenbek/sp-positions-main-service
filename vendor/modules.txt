@@ -1,6 +1,17 @@
+# github.com/Zhiyenbek/users-auth-service v0.0.0-20240311113917-5a1e7408b7f1
+## explicit; go 1.20
+github.com/Zhiyenbek/users-auth-service/config
+github.com/Zhiyenbek/users-auth-service/internal/handler/http
+github.com/Zhiyenbek/users-auth-service/internal/models
+github.com/Zhiyenbek/users-auth-service/internal/repository
+github.com/Zhiyenbek/users-auth-service/internal/service
+github.com/Zhiyenbek/users-auth-service/middleware
 # github.com/creasty/defaults v1.7.0
 ## explicit; go 1.14
 github.com/creasty/defaults
+# github.com/dgrijalva/jwt-go v3.2.0+incompatible
+## explicit
+github.com/dgrijalva/jwt-go
 # github.com/fsnotify/fsnotify v1.5.4
 ## explicit; go 1.16
 github.com/fsnotify/fsnotify
@@ -27,6 +38,15 @@ github.com/go-playground/universal-translator
 # github.com/go-playground/validator/v10 v10.10.0
 ## explicit; go 1.13
 github.com/go-playground/validator/v10
+# github.com/go-redis/redis/v7 v7.4.1
+## explicit; go 1.11
+github.com/go-redis/redis/v7
+github.com/go-redis/redis/v7/internal
+github.com/go-redis/redis/v7/internal/consistenthash
+github.com/go-redis/redis/v7/internal/hashtag
+github.com/go-redis/redis/v7/internal/pool
+github.com/go-redis/redis/v7/internal/proto
+github.com/go-redis/redis/v7/internal/util
 # github.com/goccy/go-json v0.9.7
 ## explicit; go 1.12
 github.com/goccy/go-json
@@ -38,6 +58,9 @@ github.com/goccy/go-json/internal/encoder/vm_color_indent
 github.com/goccy/go-json/internal/encoder/vm_indent
 github.com/goccy/go-json/internal/errors
 github.com/goccy/go-json/internal/runtime
+# github.com/google/uuid v1.6.0
+## explicit
+github.com/google/uuid
 # github.com/hashicorp/hcl v1.0.0
 ## explicit
 github.com/hashicorp/hcl
@@ -157,6 +180,8 @@ go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
 # golang.org/x/crypto v0.1.0
 ## explicit; go 1.17
+golang.org/x/crypto/bcrypt
+golang.org/x/crypto/blowfish
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/sha3
 # golang.org/x/net v0.1.0

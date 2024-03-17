@@ -9,6 +9,12 @@ import (
 
 type PositionService interface {
 	GetAllPositions(search string, pageNum, pageSize int) ([]models.Position, int, error)
+	GetPositionInterviews(publicID string, pageNum int, pageSize int) ([]models.Interview, int, error)
+	Exists(publicID string) error
+	GetPosition(publicID string) (*models.Position, error)
+	CreatePosition(position *models.Position) (*models.Position, error)
+	CreateSkillsForPosition(positionPublicID string, skills []string) error
+	DeleteSkillsFromPosition(positionPublicID string, skills []string) error
 }
 type Service struct {
 	PositionService

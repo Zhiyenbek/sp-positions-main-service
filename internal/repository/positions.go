@@ -2,9 +2,11 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Zhiyenbek/sp_positions_main_service/config"
 	"github.com/Zhiyenbek/sp_positions_main_service/internal/models"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"go.uber.org/zap"
 )
@@ -28,13 +30,16 @@ func (r *positionRepository) GetAllPositions(search string, pageNum, pageSize in
 	defer cancel()
 
 	offset := (pageNum - 1) * pageSize
-
 	// Query to retrieve positions for the current page
 	query := `
-		SELECT id, public_id, name, status
-		FROM positions
-		WHERE name ILIKE $1
-		ORDER BY id
+		SELECT p.public_id, p.name, p.status, c.public_id, c.name, c.logo, array_agg(s.name)
+		FROM skills s
+		INNER JOIN position_skills ps ON ps.skill_id = s.id
+		INNER JOIN positions p ON ps.position_id = p.id
+		INNER JOIN recruiters r ON p.recruiter_public_id = r.public_id
+		INNER JOIN companies c ON r.company_public_id = c.public_id
+		WHERE p.name ILIKE $1
+		GROUP BY p.public_id, p.name, p.status, c.public_id, c.name, c.logo
 		LIMIT $2 OFFSET $3
 	`
 
@@ -48,12 +53,18 @@ func (r *positionRepository) GetAllPositions(search string, pageNum, pageSize in
 	positions := []models.Position{}
 	for rows.Next() {
 		position := models.Position{}
+		company := &models.Company{}
 		err := rows.Scan(
-			&position.ID,
 			&position.PublicID,
 			&position.Name,
 			&position.Status,
+			&company.PublicID,
+			&company.Name,
+			&company.Logo,
+			&position.Skills,
 		)
+
+		position.Company = company
 		if err != nil {
 			r.logger.Errorf("Error occurred while scanning position rows: %v", err)
 			return nil, 0, err
@@ -80,4 +91,325 @@ func (r *positionRepository) GetAllPositions(search string, pageNum, pageSize in
 	}
 
 	return positions, totalCount, nil
+}
+
+func (r *positionRepository) GetPositionInterviews(publicID string, pageNum int, pageSize int) ([]models.InterviewResults, int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+
+	query := `
+		SELECT i.public_id, i.results
+		FROM interviews i
+		INNER JOIN user_interviews ui ON ui.interview_id = i.id
+		INNER JOIN positions p ON p.id = ui.position_id
+		WHERE p.public_id = $1
+		GROUP BY i.public_id, i.results
+		LIMIT $2 OFFSET $3;
+	`
+	offset := (pageNum - 1) * pageSize
+	rows, err := r.db.Query(ctx, query, publicID, pageSize, offset)
+	if err != nil {
+		r.logger.Errorf("Error occurred while retrieving interview result: %v", err)
+		return nil, 0, err
+	}
+	defer rows.Close()
+	res := make([]models.InterviewResults, 1)
+	for rows.Next() {
+		var resultBytes []byte
+		result := models.InterviewResults{}
+		err = rows.Scan(
+			&result.PublicID,
+			&resultBytes,
+		)
+		if err != nil {
+			r.logger.Errorf("Error occurred while retrieving interview result: %v", err)
+			return nil, 0, err
+		}
+		result.Result = resultBytes
+		res = append(res, result)
+	}
+
+	if err := rows.Err(); err != nil {
+		r.logger.Errorf("Error occurred while iterating over interview result for position rows: %v", err)
+		return nil, 0, err
+	}
+	query = `
+		SELECT COUNT(*)
+		FROM interviews i
+		INNER JOIN user_interviews ui ON ui.interview_id = i.id
+		INNER JOIN positions p ON p.id = ui.position_id
+		WHERE p.public_id = $1
+		GROUP BY i.public_id, i.results
+	`
+	var totalCount int
+	err = r.db.QueryRow(ctx, query, publicID).Scan(&totalCount)
+	if err != nil {
+		r.logger.Errorf("Error occurred while retrieving position count: %v", err)
+		return nil, 0, err
+	}
+	return res, totalCount, nil
+
+}
+
+func (r *positionRepository) GetPosition(publicID string) (*models.Position, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+
+	query := `SELECT p.public_id, p.name, p.status, p.description, c.public_id, c.name, c.description, r.public_id, c.logo, array_agg(s.name)
+	FROM skills s
+	INNER JOIN position_skills ps ON ps.skill_id = s.id
+	INNER JOIN positions p ON ps.position_id = p.id
+	INNER JOIN recruiters r ON p.recruiter_public_id = r.public_id
+	INNER JOIN users u ON r.public_id = u.public_id
+	INNER JOIN companies c ON r.company_public_id = c.public_id
+	WHERE p.public_id = $1
+	GROUP BY p.public_id, p.name, p.status, p.description, c.public_id, c.name, c.description, r.public_id, c.logo`
+	res := &models.Position{
+		Company: &models.Company{},
+	}
+	err := r.db.QueryRow(ctx, query, publicID).Scan(
+		&res.PublicID,
+		&res.Name,
+		&res.Status,
+		&res.Description,
+		&res.Company.PublicID,
+		&res.Company.Name,
+		&res.Company.Description,
+		&res.RecruiterPublicID,
+		&res.Company.Logo,
+		&res.Skills,
+	)
+	if err != nil {
+		r.logger.Errorf("Error occurred while getting position: %v", err)
+		return res, err
+	}
+	return res, nil
+}
+
+func (r *positionRepository) Exists(publicID string) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM positions WHERE public_id = $1)`
+
+	err := r.db.QueryRow(ctx, query, publicID).Scan(&exists)
+	if err != nil {
+		r.logger.Errorf("Error occurred while checking position existence: %v", err)
+		return false, err
+	}
+
+	return exists, nil
+}
+
+func (r *positionRepository) CreatePosition(position *models.Position) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+	var id int64
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		r.logger.Errorf("Error occurred while starting transaction: %v", err)
+		return "", err
+	}
+
+	// Insert the position into the positions table
+	insertPositionQuery := `INSERT INTO positions (description, name, status, recruiter_public_id)
+		VALUES ($1, $2, $3, $4) RETURNING public_id, id`
+	row := tx.QueryRow(ctx, insertPositionQuery, position.Description, position.Name, position.Status, position.RecruiterPublicID)
+	if err := row.Scan(&position.PublicID, &id); err != nil {
+		r.logger.Errorf("Error occurred while creating position: %v", err)
+		tx.Rollback(ctx)
+		return "", err
+	}
+
+	// Loop over the skills array
+	for _, skillName := range position.Skills {
+		// Check if the skill already exists in the database
+		var skillID int
+		query := `
+		SELECT id FROM skills WHERE name = $1
+		`
+		err := tx.QueryRow(ctx, query, skillName).Scan(&skillID)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				// Skill doesn't exist, so insert it into the database
+				insertQuery := `
+				INSERT INTO skills (name) VALUES ($1)
+				RETURNING id
+				`
+				err = tx.QueryRow(ctx, insertQuery, skillName).Scan(&skillID)
+				if err != nil {
+					r.logger.Errorf("Error inserting new skill: %v", err)
+					return "", err
+				}
+			} else {
+				r.logger.Errorf("Error checking skill existence: %v", err)
+				return "", err
+			}
+		}
+
+		insertQuery := `
+		INSERT INTO position_skills (position_id, skill_id) VALUES (
+			$1,
+			$2
+		)
+		`
+		_, err = tx.Exec(ctx, insertQuery, id, skillID)
+		if err != nil {
+			r.logger.Errorf("Error adding skill to position: %v", err)
+			return "", nil
+		}
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		r.logger.Errorf("Error occurred while committing transaction: %v", err)
+		return "", err
+	}
+
+	return *position.PublicID, nil
+}
+func (r *positionRepository) UpdatePosition(position *models.Position) error {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		r.logger.Errorf("Error occurred while starting transaction: %v", err)
+		return err
+	}
+
+	// Update the position in the positions table
+	updatePositionQuery := `
+		UPDATE positions
+		SET description = COALESCE($1, description),
+			name = COALESCE($2, name),
+			status = COALESCE($3, status),
+			recruiter_public_id = COALESCE($4, recruiter_public_id)
+		WHERE public_id = $5
+	`
+	_, err = tx.Exec(ctx, updatePositionQuery, position.Description, position.Name, position.Status, position.RecruiterPublicID, position.PublicID)
+	if err != nil {
+		r.logger.Errorf("Error occurred while updating position: %v", err)
+		tx.Rollback(ctx)
+		return err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		r.logger.Errorf("Error occurred while committing transaction: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func (r *positionRepository) CreateSkillsForPosition(positionPublicID string, skills []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		r.logger.Errorf("Error beginning transaction: %v", err)
+		return err
+	}
+
+	// Loop over the skills array
+	for _, skillName := range skills {
+		// Check if the skill already exists in the database
+		var skillID int
+		query := `
+			SELECT id FROM skills WHERE name = $1
+		`
+		err := tx.QueryRow(ctx, query, skillName).Scan(&skillID)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				// Skill doesn't exist, so insert it into the database
+				insertQuery := `
+					INSERT INTO skills (name) VALUES ($1)
+					RETURNING id
+				`
+				err = tx.QueryRow(ctx, insertQuery, skillName).Scan(&skillID)
+				if err != nil {
+					tx.Rollback(ctx)
+					r.logger.Errorf("Error inserting new skill: %v", err)
+					return err
+				}
+			} else {
+				tx.Rollback(ctx)
+				r.logger.Errorf("Error checking skill existence: %v", err)
+				return err
+			}
+		}
+
+		// Associate the skill with the position
+		insertQuery := `
+			INSERT INTO position_skills (position_id, skill_id) VALUES (
+				(SELECT id FROM positions WHERE public_id = $1),
+				$2
+			) ON CONFLICT DO NOTHING
+		`
+		_, err = tx.Exec(ctx, insertQuery, positionPublicID, skillID)
+		if err != nil {
+			tx.Rollback(ctx)
+			r.logger.Errorf("Error adding skill to position: %v", err)
+			return err
+		}
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		r.logger.Errorf("Error committing transaction: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func (r *positionRepository) DeleteSkillsFromPosition(positionPublicID string, skills []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		r.logger.Errorf("Error beginning transaction: %v", err)
+		return err
+	}
+
+	// Loop over the skills array
+	for _, skillName := range skills {
+		// Get the skill ID
+		var skillID int
+		query := `
+			SELECT id FROM skills WHERE name = $1
+		`
+		err := tx.QueryRow(ctx, query, skillName).Scan(&skillID)
+		if err != nil {
+			if errors.Is(pgx.ErrNoRows, err) {
+				continue
+			}
+			r.logger.Errorf("Error retrieving skill ID: %v", err)
+			tx.Rollback(ctx)
+			return err
+		}
+
+		// Delete the skill from the position
+		deleteQuery := `
+			DELETE FROM position_skills
+			WHERE position_id = (SELECT id FROM positions WHERE public_id = $1)
+			AND skill_id = $2
+		`
+		_, err = tx.Exec(ctx, deleteQuery, positionPublicID, skillID)
+		if err != nil {
+			r.logger.Errorf("Error deleting skill from position: %v", err)
+		}
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		r.logger.Errorf("Error committing transaction: %v", err)
+		return err
+	}
+
+	return nil
 }

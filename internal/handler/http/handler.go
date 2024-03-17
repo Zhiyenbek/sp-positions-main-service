@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/Zhiyenbek/sp_positions_main_service/config"
 	"github.com/Zhiyenbek/sp_positions_main_service/internal/service"
+	"github.com/Zhiyenbek/users-auth-service/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -30,7 +31,12 @@ func (h *handler) InitRoutes() *gin.Engine {
 	router := gin.Default()
 	router.Use(cors.Default())
 	router.GET("/positions", h.GetPositions)
-
+	router.GET("/positions/:position_public_id/interviews", h.GetPositionInterviews)
+	router.GET("/position/:position_public_id", h.GetPosition)
+	router.POST("/position", middleware.VerifyToken(h.cfg.Token.TokenSecret), h.CreatePosition)
+	router.POST("/position/:position_public_id/skills", h.AddSkillsToPosition)
+	router.DELETE("/position/:position_public_id/skills", h.DeleteSkillsFromPosition)
+	// router.PUT("/position", middleware.VerifyToken(h.cfg.Token.TokenSecret), h.UpdatePosition)
 	return router
 }
 

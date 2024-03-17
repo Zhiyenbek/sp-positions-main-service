@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
     public_id UUID UNIQUE DEFAULT uuid_generate_v4() NOT NULL,
     first_name TEXT NOT NULL,
     last_name TEXT,
+    email TEXT,
     photo TEXT
 );
 
@@ -30,15 +31,17 @@ CREATE TABLE IF NOT EXISTS companies (
     id SERIAL PRIMARY KEY,
     public_id UUID UNIQUE DEFAULT uuid_generate_v4() NOT NULL,
     name TEXT,
+    logo TEXT,
     description TEXT
 );
 
 CREATE TABLE IF NOT EXISTS positions (
     id SERIAL PRIMARY KEY,
     public_id UUID UNIQUE DEFAULT uuid_generate_v4() NOT NULL,
+    description TEXT,
     name TEXT,
     status int DEFAULT 0,
-    recruiters_public_id UUID
+    recruiter_public_id UUID NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS skills (
@@ -104,23 +107,23 @@ CREATE TABLE IF NOT EXISTS user_interviews (
 ALTER TABLE recruiters ADD CONSTRAINT fk_recruiters_users FOREIGN KEY (public_id) REFERENCES users(public_id) ON DELETE CASCADE;
 ALTER TABLE candidates ADD CONSTRAINT fk_candidates_users FOREIGN KEY (public_id) REFERENCES users(public_id) ON DELETE CASCADE;
 ALTER TABLE auth ADD CONSTRAINT fk_auth_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-ALTER TABLE positions ADD CONSTRAINT fk_positions_recruiters FOREIGN KEY (recruiters_public_id) REFERENCES recruiters(public_id) ON DELETE CASCADE;
+ALTER TABLE positions ADD CONSTRAINT fk_positions_recruiters FOREIGN KEY (recruiter_public_id) REFERENCES recruiters(public_id) ON DELETE CASCADE;
 ALTER TABLE videos ADD CONSTRAINT fk_videos_interviews FOREIGN KEY (interviews_public_id) REFERENCES interviews(public_id) ON DELETE CASCADE;
 
 
 
-INSERT INTO users (first_name, last_name, photo)
+INSERT INTO users (first_name, last_name, photo, email)
 VALUES
-    ('John', 'Doe', 'path/to/photo1'),
-    ('Jane', 'Smith', 'path/to/photo2'),
-    ('Michael', 'Johnson', 'path/to/photo3'),
-    ('Emily', 'Williams', 'path/to/photo4'),
-    ('David', 'Brown', 'path/to/photo5'),
-    ('Olivia', 'Jones', 'path/to/photo6'),
-    ('Daniel', 'Miller','path/to/photo7'),
-    ('Sophia', 'Taylor','path/to/photo8'),
-    ('Matthew', 'Anderson','path/to/photo9'),
-    ('Ava', 'Thomas','path/to/photo10');
+    ('John', 'Doe', 'path/to/photo1', 'example@mail.com'),
+    ('Jane', 'Smith', 'path/to/photo2', 'example@mail.com'),
+    ('Michael', 'Johnson', 'path/to/photo3', 'example@mail.com'),
+    ('Emily', 'Williams', 'path/to/photo4', 'example@mail.com'),
+    ('David', 'Brown', 'path/to/photo5', 'example@mail.com'),
+    ('Olivia', 'Jones', 'path/to/photo6', 'example@mail.com'),
+    ('Daniel', 'Miller','path/to/photo7', 'example@mail.com'),
+    ('Sophia', 'Taylor','path/to/photo8', 'example@mail.com'),
+    ('Matthew', 'Anderson','path/to/photo9', 'example@mail.com'),
+    ('Ava', 'Thomas','path/to/photo10', 'example@mail.com');
 
 
 INSERT INTO candidates (public_id, current_position, resume, bio, education)
@@ -128,11 +131,11 @@ SELECT public_id, 'Software Engineer', 'John Doe Resume', 'John Doe Bio',  'MTI'
 FROM users
 WHERE id <= 5;
 
-INSERT INTO companies (name, description)
+INSERT INTO companies (name, description, logo)
 VALUES
-    ('Company A', 'A technology company that specializes in software development.'),
-    ('Company B', 'A global retail company with a focus on e-commerce.'),
-    ('Company C', 'A financial services company providing investment and banking solutions.');
+    ('Company A', 'A technology company that specializes in software development.','path/to/logo1'),
+    ('Company B', 'A global retail company with a focus on e-commerce.','path/to/logo2'),
+    ('Company C', 'A financial services company providing investment and banking solutions.','path/to/logo3');
 
 INSERT INTO recruiters (public_id, company_public_id)
 SELECT public_id, (SELECT public_id FROM companies WHERE name = 'Company A')
@@ -142,8 +145,8 @@ WHERE id > 5;
 
 
 
-INSERT INTO positions (public_id, name, recruiters_public_id)
-SELECT public_id, 'Software Engineer', (SELECT public_id FROM recruiters WHERE id = 1)
+INSERT INTO positions (public_id, name, recruiter_public_id, description)
+SELECT public_id, 'Software Engineer', (SELECT public_id FROM recruiters WHERE id = 1), 'This position is awesome'
 FROM candidates;
 
 
@@ -166,7 +169,49 @@ FROM positions;
 
 
 INSERT INTO interviews (public_id, results)
-SELECT public_id, '{"result": "Pass"}'
+SELECT public_id, '
+{
+  "questions": [
+    {
+      "question": "What is your experience with object-oriented programming?",
+      "evaluation": "Good",
+      "score": 8,
+      "video_link": "https://example.com/video1",
+      "emotion_results": [
+        {
+          "emotion": "Happiness",
+          "exact_time": 24.5,
+          "duration": 10.2
+        },
+        {
+          "emotion": "Neutral",
+          "exact_time": 36.2,
+          "duration": 5.7
+        }
+      ]
+    },
+    {
+      "question": "Describe a challenging project you have worked on.",
+      "evaluation": "Excellent performance with exceptional problem-solving skills",
+      "score": 9,
+      "video_link": "https://example.com/video2",
+      "emotion_results": [
+        {
+          "emotion": "Confidence",
+          "exact_time": 45.8,
+          "duration": 8.5
+        },
+        {
+          "emotion": "Determination",
+          "exact_time": 56.3,
+          "duration": 7.1
+        }
+      ]
+    }
+  ],
+  "score": 17,
+  "video": "https://example.com/interview_video"
+}'
 FROM candidates;
 
 
@@ -176,7 +221,7 @@ FROM candidates;
 
 
 INSERT INTO auth (user_id, login, password)
-SELECT id, 'user' || id, 'password' || id
+SELECT id, 'user' || id, '$2a$12$TPhE59oXJf8TBvbDRiBghu7jcgVppHgYPLmZr7ePf9rjNwVWJJDuO'
 FROM users;
 
 
@@ -196,3 +241,4 @@ FROM candidates c
 CROSS JOIN positions p
 CROSS JOIN interviews i
 WHERE c.id <= 5;
+
