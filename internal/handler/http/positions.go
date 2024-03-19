@@ -8,6 +8,7 @@ import (
 	"github.com/Zhiyenbek/sp-positions-main-service/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/google/uuid"
 )
 
 type GetPositionsResult struct {
@@ -105,6 +106,7 @@ func (h *handler) GetPosition(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, sendResponse(0, res, nil))
 }
+
 func (h *handler) CreatePosition(c *gin.Context) {
 	publicID := c.GetString("public_id")
 
@@ -180,7 +182,7 @@ func (h *handler) DeleteSkillsFromPosition(c *gin.Context) {
 	c.JSON(http.StatusOK, sendResponse(0, nil, nil))
 }
 func (h *handler) GetPositionsByCompany(c *gin.Context) {
-	companyID := c.Param("companyId")
+	companyID := c.Param("company_public_id")
 	pageNum, err := strconv.Atoi(c.Query("page_num"))
 	if err != nil || pageNum < 1 {
 		pageNum = models.DefaultPageNum
@@ -190,6 +192,31 @@ func (h *handler) GetPositionsByCompany(c *gin.Context) {
 		pageSize = models.DefaultPageSize
 	}
 	positions, count, err := h.service.PositionService.GetPositionsByCompany(companyID, pageNum, pageSize, c.Query("search"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, sendResponse(-1, nil, models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, sendResponse(0, GetPositionsResult{
+		Positions: positions,
+		Count:     count,
+	}, nil))
+}
+
+func (h *handler) GetPositionsByRecruiter(c *gin.Context) {
+	id := c.Param("recruiter_public_id")
+	if err := uuid.Validate(id); err != nil {
+		c.JSON(http.StatusBadRequest, sendResponse(-1, nil, models.ErrInvalidInput))
+	}
+	pageNum, err := strconv.Atoi(c.Query("page_num"))
+	if err != nil || pageNum < 1 {
+		pageNum = models.DefaultPageNum
+	}
+	pageSize, err := strconv.Atoi(c.Query("page_size"))
+	if err != nil || pageSize < 1 {
+		pageSize = models.DefaultPageSize
+	}
+	positions, count, err := h.service.PositionService.GetPositionsByRecruiter(id, pageNum, pageSize, c.Query("search"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, sendResponse(-1, nil, models.ErrInternalServer))
 		return

@@ -16,6 +16,7 @@ type PositionService interface {
 	CreateSkillsForPosition(positionPublicID string, skills []string) error
 	DeleteSkillsFromPosition(positionPublicID string, skills []string) error
 	GetPositionsByCompany(companyID string, pageNum int, pageSize int, search string) ([]models.Position, int, error)
+	GetPositionsByRecruiter(recruiterID string, pageNum int, pageSize int, search string) ([]models.Position, int, error)
 }
 type Service struct {
 	PositionService

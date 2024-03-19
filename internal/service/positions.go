@@ -93,3 +93,7 @@ func (p *positionsService) DeleteSkillsFromPosition(positionPublicID string, ski
 func (p *positionsService) GetPositionsByCompany(companyID string, pageNum int, pageSize int, search string) ([]models.Position, int, error) {
 	return p.positionRepo.GetPositionsByCompany(companyID, pageNum, pageSize, search)
 }
+
+func (p *positionsService) GetPositionsByRecruiter(recruiterID string, pageNum int, pageSize int, search string) ([]models.Position, int, error) {
+	return p.positionRepo.GetPositionsByRecruiter(recruiterID, pageNum, pageSize, search)
+}

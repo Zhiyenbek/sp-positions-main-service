@@ -519,3 +519,102 @@ func (r *positionRepository) GetPositionsByCompany(companyID string, pageNum int
 
 	return positions, count, nil
 }
+
+func (r *positionRepository) GetPositionsByRecruiter(recruiterID string, pageNum int, pageSize int, search string) ([]models.Position, int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+	countQuery := `
+		SELECT
+			COUNT(*)
+		FROM
+			positions p
+		INNER JOIN
+			recruiters r ON p.recruiter_public_id = r.public_id
+		WHERE
+			r.public_id = $1
+			AND (p.name ILIKE $2 OR p.description ILIKE $2)
+	`
+
+	query := `
+		SELECT
+			p.public_id,
+			p.description,
+			p.name,
+			p.status,
+			p.recruiter_public_id
+		FROM
+			positions p
+		INNER JOIN
+			recruiters r ON p.recruiter_public_id = r.public_id
+		WHERE
+			r.public_id = $1
+			AND (p.name ILIKE $2 OR p.description ILIKE $2)
+		GROUP BY 
+			p.id, 
+			p.public_id,
+			p.description,
+			p.name,
+			p.status,
+			p.recruiter_public_id
+		ORDER BY
+			p.id ASC
+		LIMIT $3 OFFSET $4
+	`
+
+	// Calculate the offset based on the page number and page size
+	offset := (pageNum - 1) * pageSize
+
+	// Format the search query by adding wildcard characters
+	searchQuery := "%" + search + "%"
+
+	// Retrieve the count of positions
+	var count int
+	err := r.db.QueryRow(ctx, countQuery, recruiterID, searchQuery).Scan(&count)
+	if err != nil {
+		r.logger.Errorf("Error retrieving positions: %v", err)
+		return nil, 0, err
+	}
+
+	rows, err := r.db.Query(ctx, query, recruiterID, searchQuery, pageSize, offset)
+	if err != nil {
+		r.logger.Errorf("Error retrieving positions: %v", err)
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	positions := []models.Position{}
+	for rows.Next() {
+		var position models.Position
+		err := rows.Scan(
+			&position.PublicID,
+			&position.Description,
+			&position.Name,
+			&position.Status,
+			&position.RecruiterPublicID,
+		)
+		if err != nil {
+			r.logger.Errorf("Error retrieving positions: %v", err)
+			return nil, 0, err
+		}
+		query := `SELECT array_agg(s.name) from skills AS s
+		INNER JOIN position_skills ps ON ps.skill_id = s.id
+		INNER JOIN positions p ON ps.position_id = p.id
+		WHERE p.public_id = $1`
+		if position.PublicID != nil {
+			err = r.db.QueryRow(ctx, query, *position.PublicID).Scan(&position.Skills)
+			if err != nil {
+				r.logger.Errorf("Error retrieving positions: %v", err)
+				return nil, 0, err
+			}
+		}
+
+		positions = append(positions, position)
+	}
+
+	if err := rows.Err(); err != nil {
+		r.logger.Errorf("Error retrieving positions: %v", err)
+		return nil, 0, err
+	}
+
+	return positions, count, nil
+}
