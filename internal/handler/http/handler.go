@@ -36,6 +36,7 @@ func (h *handler) InitRoutes() *gin.Engine {
 	router.POST("/position", middleware.VerifyToken(h.cfg.Token.TokenSecret, h.logger), h.CreatePosition)
 	router.POST("/position/:position_public_id/skills", h.AddSkillsToPosition)
 	router.DELETE("/position/:position_public_id/skills", h.DeleteSkillsFromPosition)
+	router.GET("companies/:companyId/positions", h.GetPositionsByCompany)
 	// router.PUT("/position", middleware.VerifyToken(h.cfg.Token.TokenSecret), h.UpdatePosition)
 	return router
 }

@@ -179,3 +179,24 @@ func (h *handler) DeleteSkillsFromPosition(c *gin.Context) {
 
 	c.JSON(http.StatusOK, sendResponse(0, nil, nil))
 }
+func (h *handler) GetPositionsByCompany(c *gin.Context) {
+	companyID := c.Param("companyId")
+	pageNum, err := strconv.Atoi(c.Query("page_num"))
+	if err != nil || pageNum < 1 {
+		pageNum = models.DefaultPageNum
+	}
+	pageSize, err := strconv.Atoi(c.Query("page_size"))
+	if err != nil || pageSize < 1 {
+		pageSize = models.DefaultPageSize
+	}
+	positions, count, err := h.service.PositionService.GetPositionsByCompany(companyID, pageNum, pageSize, c.Query("search"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, sendResponse(-1, nil, models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, sendResponse(0, GetPositionsResult{
+		Positions: positions,
+		Count:     count,
+	}, nil))
+}

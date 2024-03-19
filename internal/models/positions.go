@@ -5,7 +5,7 @@ type Position struct {
 	Name              *string   `json:"name"`
 	Status            *int      `json:"status"`
 	Skills            []*string `json:"skills"`
-	Company           *Company  `json:"company"`
+	Company           *Company  `json:"company,omitempty"`
 	RecruiterPublicID *string   `json:"recruiter_public_id,omitempty"`
 	Description       *string   `json:"description,omitempty"`
 }

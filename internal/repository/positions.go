@@ -32,10 +32,8 @@ func (r *positionRepository) GetAllPositions(search string, pageNum, pageSize in
 	offset := (pageNum - 1) * pageSize
 	// Query to retrieve positions for the current page
 	query := `
-		SELECT p.public_id, p.name, p.status, c.public_id, c.name, c.logo, array_agg(s.name)
-		FROM skills s
-		INNER JOIN position_skills ps ON ps.skill_id = s.id
-		INNER JOIN positions p ON ps.position_id = p.id
+		SELECT p.public_id, p.name, p.status, c.public_id, c.name, c.logo
+		FROM positions AS p
 		INNER JOIN recruiters r ON p.recruiter_public_id = r.public_id
 		INNER JOIN companies c ON r.company_public_id = c.public_id
 		WHERE p.name ILIKE $1
@@ -61,7 +59,6 @@ func (r *positionRepository) GetAllPositions(search string, pageNum, pageSize in
 			&company.PublicID,
 			&company.Name,
 			&company.Logo,
-			&position.Skills,
 		)
 
 		position.Company = company
@@ -69,7 +66,17 @@ func (r *positionRepository) GetAllPositions(search string, pageNum, pageSize in
 			r.logger.Errorf("Error occurred while scanning position rows: %v", err)
 			return nil, 0, err
 		}
-
+		query := `SELECT array_agg(s.name) from skills AS s
+		INNER JOIN position_skills ps ON ps.skill_id = s.id
+		INNER JOIN positions p ON ps.position_id = p.id
+		WHERE p.public_id = $1`
+		if position.PublicID != nil {
+			err = r.db.QueryRow(ctx, query, *position.PublicID).Scan(&position.Skills)
+			if err != nil {
+				r.logger.Errorf("Error retrieving positions by company: %v", err)
+				return nil, 0, err
+			}
+		}
 		positions = append(positions, position)
 	}
 
@@ -412,4 +419,103 @@ func (r *positionRepository) DeleteSkillsFromPosition(positionPublicID string, s
 	}
 
 	return nil
+}
+
+func (r *positionRepository) GetPositionsByCompany(companyID string, pageNum int, pageSize int, search string) ([]models.Position, int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+	countQuery := `
+		SELECT
+			COUNT(*)
+		FROM
+			positions p
+		INNER JOIN
+			recruiters r ON p.recruiter_public_id = r.public_id
+		WHERE
+			r.company_public_id = $1
+			AND (p.name ILIKE $2 OR p.description ILIKE $2)
+	`
+
+	query := `
+		SELECT
+			p.public_id,
+			p.description,
+			p.name,
+			p.status,
+			p.recruiter_public_id
+		FROM
+			positions p
+		INNER JOIN
+			recruiters r ON p.recruiter_public_id = r.public_id
+		WHERE
+			r.company_public_id = $1
+			AND (p.name ILIKE $2 OR p.description ILIKE $2)
+		GROUP BY 
+			p.id, 
+			p.public_id,
+			p.description,
+			p.name,
+			p.status,
+			p.recruiter_public_id
+		ORDER BY
+			p.id ASC
+		LIMIT $3 OFFSET $4
+	`
+
+	// Calculate the offset based on the page number and page size
+	offset := (pageNum - 1) * pageSize
+
+	// Format the search query by adding wildcard characters
+	searchQuery := "%" + search + "%"
+
+	// Retrieve the count of positions
+	var count int
+	err := r.db.QueryRow(ctx, countQuery, companyID, searchQuery).Scan(&count)
+	if err != nil {
+		r.logger.Errorf("Error retrieving positions by company: %v", err)
+		return nil, 0, err
+	}
+
+	rows, err := r.db.Query(ctx, query, companyID, searchQuery, pageSize, offset)
+	if err != nil {
+		r.logger.Errorf("Error retrieving positions by company: %v", err)
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	positions := []models.Position{}
+	for rows.Next() {
+		var position models.Position
+		err := rows.Scan(
+			&position.PublicID,
+			&position.Description,
+			&position.Name,
+			&position.Status,
+			&position.RecruiterPublicID,
+		)
+		if err != nil {
+			r.logger.Errorf("Error retrieving positions by company: %v", err)
+			return nil, 0, err
+		}
+		query := `SELECT array_agg(s.name) from skills AS s
+		INNER JOIN position_skills ps ON ps.skill_id = s.id
+		INNER JOIN positions p ON ps.position_id = p.id
+		WHERE p.public_id = $1`
+		if position.PublicID != nil {
+			err = r.db.QueryRow(ctx, query, *position.PublicID).Scan(&position.Skills)
+			if err != nil {
+				r.logger.Errorf("Error retrieving positions by company: %v", err)
+				return nil, 0, err
+			}
+		}
+
+		positions = append(positions, position)
+	}
+
+	if err := rows.Err(); err != nil {
+		r.logger.Errorf("Error retrieving positions by company: %v", err)
+		return nil, 0, err
+	}
+
+	return positions, count, nil
 }
