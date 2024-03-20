@@ -12,6 +12,7 @@ type Interview struct {
 
 type Question struct {
 	Question       string          `json:"question"`
+	QuestionType   string          `json:"question_type"`
 	Evaluation     string          `json:"evaluation"`
 	Score          int             `json:"score"`
 	VideoLink      string          `json:"video_link"`

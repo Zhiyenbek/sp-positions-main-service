@@ -175,6 +175,7 @@ SELECT public_id, '
     {
       "question": "What is your experience with object-oriented programming?",
       "evaluation": "Good",
+      "question_type": "tech",
       "score": 8,
       "video_link": "https://example.com/video1",
       "emotion_results": [
@@ -192,6 +193,7 @@ SELECT public_id, '
     },
     {
       "question": "Describe a challenging project you have worked on.",
+      "question_type": "tech",
       "evaluation": "Excellent performance with exceptional problem-solving skills",
       "score": 9,
       "video_link": "https://example.com/video2",
