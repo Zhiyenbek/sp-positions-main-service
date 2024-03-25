@@ -151,6 +151,9 @@ func (r *positionRepository) GetPositionInterviews(publicID string, pageNum int,
 	var totalCount int
 	err = r.db.QueryRow(ctx, query, publicID).Scan(&totalCount)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return res, 0, nil
+		}
 		r.logger.Errorf("Error occurred while retrieving position count: %v", err)
 		return nil, 0, err
 	}
