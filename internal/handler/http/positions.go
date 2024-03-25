@@ -16,8 +16,8 @@ type GetPositionsResult struct {
 	Count     int               `json:"count"`
 }
 type GetInteviewPosition struct {
-	Interviews []models.Interview `json:"interviews"`
-	Count      int                `json:"count"`
+	Interviews []*models.Interview `json:"interviews"`
+	Count      int                 `json:"count"`
 }
 type skillsReq struct {
 	Skills []string `json:"skills"`

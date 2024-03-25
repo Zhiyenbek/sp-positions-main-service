@@ -33,26 +33,27 @@ func (p *positionsService) GetPosition(publicID string) (*models.Position, error
 	return p.positionRepo.GetPosition(publicID)
 }
 
-func (p *positionsService) GetPositionInterviews(publicID string, pageNum int, pageSize int) ([]models.Interview, int, error) {
+func (p *positionsService) GetPositionInterviews(publicID string, pageNum int, pageSize int) ([]*models.Interview, int, error) {
 	interviewRawResult, count, err := p.positionRepo.GetPositionInterviews(publicID, pageNum, pageSize)
 	if err != nil {
 		return nil, 0, err
 	}
-	res := make([]models.Interview, 0)
+	res := make([]*models.Interview, 0)
 	for _, r := range interviewRawResult {
 		if r.Result != nil {
-			result := models.Result{}
-			interview := models.Interview{}
+			result := &models.Result{}
+			interview := &models.Interview{}
 			err = json.Unmarshal(r.Result, &result)
 			if err != nil {
 				p.logger.Error(err)
 				return nil, 0, err
 			}
 			interview.PublicID = r.PublicID
-			interview.Result = result
+			interview.Result = *result
 			res = append(res, interview)
+		} else {
+			res = append(res, nil)
 		}
-		res = append(res, models.Interview{})
 	}
 	return res, count, nil
 }

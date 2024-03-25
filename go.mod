@@ -7,6 +7,7 @@ require (
 	github.com/creasty/defaults v1.7.0
 	github.com/gin-contrib/cors v1.7.0
 	github.com/gin-gonic/gin v1.9.1
+	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/spf13/viper v1.18.2
 	go.uber.org/zap v1.27.0
@@ -25,7 +26,6 @@ require (
 	github.com/go-playground/validator/v10 v10.19.0 // indirect
 	github.com/go-redis/redis/v7 v7.4.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect
