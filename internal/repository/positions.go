@@ -146,7 +146,6 @@ func (r *positionRepository) GetPositionInterviews(publicID string, pageNum int,
 		INNER JOIN user_interviews ui ON ui.interview_id = i.id
 		INNER JOIN positions p ON p.id = ui.position_id
 		WHERE p.public_id = $1
-		GROUP BY i.public_id, i.results
 	`
 	var totalCount int
 	err = r.db.QueryRow(ctx, query, publicID).Scan(&totalCount)
