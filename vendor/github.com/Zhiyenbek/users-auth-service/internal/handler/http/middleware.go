@@ -19,6 +19,7 @@ func ParseAuthToken(tokenString string, tokenSecret string) (*models.Token, erro
 	if claims, ok := token.Claims.(*models.JwtUserClaims); ok && token.Valid {
 		token := &models.Token{
 			PublicID:   claims.PublicID,
+			Role:       claims.Role,
 			TokenValue: tokenString,
 			TTL:        time.Duration(claims.ExpiresAt),
 		}

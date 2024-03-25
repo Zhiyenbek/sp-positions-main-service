@@ -13,6 +13,7 @@ type AuthService interface {
 	RefreshToken(tokenString string) (*models.Tokens, error)
 	CreateRecruiter(req *models.RecruiterSignUpRequest) error
 	CreateCandidate(req *models.CandidateSignUpRequest) error
+	SignOut(accessToken string) error
 }
 
 type Service struct {

@@ -31,6 +31,16 @@ func NewAuthService(repo *repository.Repository, cfg *config.Configs, logger *za
 		logger:        logger,
 	}
 }
+func (u *authService) SignOut(accessToken string) error {
+
+	token, err := u.parseToken(accessToken, u.cfg.Token.Access.TokenSecret)
+	if err != nil {
+		u.logger.Error("Could not parse access token", err)
+		return err
+	}
+
+	return u.tokenRepo.UnsetRTToken(token.PublicID)
+}
 
 func (s *authService) CreateCandidate(req *models.CandidateSignUpRequest) error {
 	var err error
