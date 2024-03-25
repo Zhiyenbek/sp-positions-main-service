@@ -52,7 +52,9 @@ func (p *positionsService) GetPositionInterviews(publicID string, pageNum int, p
 			interview.Result = *result
 			res = append(res, interview)
 		} else {
-			res = append(res, nil)
+			res = append(res, &models.Interview{
+				PublicID: r.PublicID,
+			})
 		}
 	}
 	return res, count, nil
