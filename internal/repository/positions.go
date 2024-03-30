@@ -37,7 +37,7 @@ func (r *positionRepository) GetAllPositions(search string, pageNum, pageSize in
 		INNER JOIN recruiters r ON p.recruiter_public_id = r.public_id
 		INNER JOIN companies c ON r.company_public_id = c.public_id
 		WHERE p.name ILIKE $1
-		GROUP BY p.public_id, p.name, p.status, c.public_id, c.name, c.logo
+		GROUP BY p.public_id, p.name, p.status, c.public_id, c.name, c.logo, c.description, p.description
 		LIMIT $2 OFFSET $3
 	`
 
