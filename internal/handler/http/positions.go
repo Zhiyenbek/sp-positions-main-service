@@ -282,3 +282,27 @@ func (h *handler) GetQuestionsToPosition(c *gin.Context) {
 		Questions:        res,
 	}, nil))
 }
+
+type PublicIDResponse struct {
+	PublicID string `json:"public_id"`
+}
+
+func (h *handler) CreateInterview(c *gin.Context) {
+	candidatePublicID := c.GetString("public_id")
+	if c.GetString("role") != "candidate" {
+		c.JSON(http.StatusUnauthorized, sendResponse(-1, nil, models.ErrPermissionDenied))
+		return
+	}
+
+	positionPublicID := c.Param("position_public_id")
+
+	publicID, err := h.service.PositionService.CreateInterview(positionPublicID, candidatePublicID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, sendResponse(-1, nil, models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusCreated, sendResponse(0, PublicIDResponse{
+		PublicID: publicID,
+	}, nil))
+}

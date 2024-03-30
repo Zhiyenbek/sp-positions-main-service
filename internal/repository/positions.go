@@ -6,6 +6,7 @@ import (
 
 	"github.com/Zhiyenbek/sp-positions-main-service/config"
 	"github.com/Zhiyenbek/sp-positions-main-service/internal/models"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"go.uber.org/zap"
@@ -716,4 +717,58 @@ func (r *positionRepository) GetPositionQuestions(positionPublicID string) ([]*m
 	}
 
 	return questions, nil
+}
+
+func (r *positionRepository) CreateInterview(positionPublicID, candidatePublicID string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+	publicID := uuid.New().String()
+	var interviewID int
+
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		r.logger.Errorf("Error occurred while starting transaction: %v", err)
+		return "", err
+	}
+
+	// Insert into interviews table
+	query := `
+		INSERT INTO interviews (public_id) VALUES ($1) RETURNING id
+	`
+
+	err = tx.QueryRow(ctx, query, publicID).Scan(&interviewID)
+	if err != nil {
+		r.logger.Errorf("Error occurred while creating interview: %v", err)
+		if txErr := tx.Rollback(ctx); txErr != nil {
+			r.logger.Warn("could not rollback", txErr)
+			return "", txErr
+		}
+		return "", err
+	}
+
+	// Insert into user_interviews table
+	query = `
+		INSERT INTO user_interviews (candidate_id, position_id, interview_id)
+		SELECT c.id, p.id, $1
+		FROM candidates c
+		INNER JOIN positions p ON p.public_id = $2
+		WHERE c.public_id = $3
+	`
+
+	_, err = tx.Exec(ctx, query, interviewID, positionPublicID, candidatePublicID)
+	if err != nil {
+		r.logger.Errorf("Error occurred while inserting into user_interviews: %v", err)
+		if txErr := tx.Rollback(ctx); txErr != nil {
+			r.logger.Warn("could not rollback", txErr)
+			return "", txErr
+		}
+		return "", err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		r.logger.Errorf("Error occurred while committing transaction: %v", err)
+		return "", err
+	}
+
+	return publicID, nil
 }

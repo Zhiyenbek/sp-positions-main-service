@@ -19,6 +19,7 @@ type PositionRepository interface {
 	GetPositionsByRecruiter(recruiterID string, pageNum int, pageSize int, search string) ([]models.Position, int, error)
 	AddQuestionsToPosition(positionPublicID string, questions []*models.Question) ([]*models.Question, error)
 	GetPositionQuestions(positionPublicID string) ([]*models.Question, error)
+	CreateInterview(positionPublicID, candidatePublicID string) (string, error)
 }
 
 type CompanyRepository interface {

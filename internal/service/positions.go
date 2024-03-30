@@ -104,6 +104,11 @@ func (p *positionsService) GetPositionsByRecruiter(recruiterID string, pageNum i
 func (p *positionsService) AddQuestionsToPosition(positionPublicID string, questions []*models.Question) ([]*models.Question, error) {
 	return p.positionRepo.AddQuestionsToPosition(positionPublicID, questions)
 }
+
 func (p *positionsService) GetPositionQuestions(positionPublicID string) ([]*models.Question, error) {
 	return p.positionRepo.GetPositionQuestions(positionPublicID)
+}
+
+func (p *positionsService) CreateInterview(positionPublicID, candidatePublicID string) (string, error) {
+	return p.positionRepo.CreateInterview(positionPublicID, candidatePublicID)
 }
