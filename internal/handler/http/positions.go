@@ -227,3 +227,33 @@ func (h *handler) GetPositionsByRecruiter(c *gin.Context) {
 		Count:     count,
 	}, nil))
 }
+
+type Questions struct {
+	PositionPublicID string             `json:"position_public_id"`
+	Questions        []*models.Question `json:"questions"`
+}
+
+func (h *handler) AddQuestionsToPosition(c *gin.Context) {
+	id := c.Param("position_public_id")
+	req := &Questions{}
+	if err := c.ShouldBindWith(req, binding.JSON); err != nil {
+		h.logger.Errorf("Failed to parse request body when deleting skills from position: %s\n", err.Error())
+		c.JSON(http.StatusBadRequest, sendResponse(-1, nil, models.ErrInvalidInput))
+		return
+	}
+
+	res, err := h.service.AddQuestionsToPosition(id, req.Questions)
+	if err != nil {
+		if errors.Is(err, models.ErrPositionNotFound) {
+			c.JSON(http.StatusNotFound, sendResponse(-1, nil, models.ErrPositionNotFound))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, sendResponse(-1, nil, models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusCreated, sendResponse(0, Questions{
+		PositionPublicID: id,
+		Questions:        res,
+	}, nil))
+}

@@ -103,6 +103,7 @@ CREATE TABLE IF NOT EXISTS user_interviews (
     CONSTRAINT fk_user_interviews_interviews FOREIGN KEY (interview_id) REFERENCES interviews(id) ON DELETE CASCADE
 );
 
+
 -- Creating references
 ALTER TABLE recruiters ADD CONSTRAINT fk_recruiters_users FOREIGN KEY (public_id) REFERENCES users(public_id) ON DELETE CASCADE;
 ALTER TABLE candidates ADD CONSTRAINT fk_candidates_users FOREIGN KEY (public_id) REFERENCES users(public_id) ON DELETE CASCADE;

@@ -10,7 +10,7 @@ type Interview struct {
 	Result   Result `json:"result"`
 }
 
-type Question struct {
+type QuestionResult struct {
 	Question       string          `json:"question"`
 	QuestionType   string          `json:"question_type"`
 	Evaluation     string          `json:"evaluation"`
@@ -26,6 +26,6 @@ type EmotionResult struct {
 }
 
 type Result struct {
-	Questions []Question `json:"questions"`
-	Score     int        `json:"score"`
+	Questions []QuestionResult `json:"questions"`
+	Score     int              `json:"score"`
 }

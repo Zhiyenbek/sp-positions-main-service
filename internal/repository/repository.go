@@ -17,6 +17,7 @@ type PositionRepository interface {
 	DeleteSkillsFromPosition(positionPublicID string, skills []string) error
 	GetPositionsByCompany(companyID string, pageNum int, pageSize int, search string) ([]models.Position, int, error)
 	GetPositionsByRecruiter(recruiterID string, pageNum int, pageSize int, search string) ([]models.Position, int, error)
+	AddQuestionsToPosition(positionPublicID string, questions []*models.Question) ([]*models.Question, error)
 }
 
 type CompanyRepository interface {

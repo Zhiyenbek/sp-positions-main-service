@@ -278,6 +278,7 @@ func (r *positionRepository) CreatePosition(position *models.Position) (string, 
 
 	return *position.PublicID, nil
 }
+
 func (r *positionRepository) UpdatePosition(position *models.Position) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
 	defer cancel()
@@ -619,4 +620,57 @@ func (r *positionRepository) GetPositionsByRecruiter(recruiterID string, pageNum
 	}
 
 	return positions, count, nil
+}
+
+func (r *positionRepository) AddQuestionsToPosition(positionPublicID string, questions []*models.Question) ([]*models.Question, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		r.logger.Errorf("Error occurred while starting transaction: %v", err)
+		return nil, err
+	}
+
+	// Retrieve the position ID from the positions table based on the public ID
+	var positionID int
+	getPositionIDQuery := `SELECT id FROM positions WHERE public_id = $1`
+	err = tx.QueryRow(ctx, getPositionIDQuery, positionPublicID).Scan(&positionID)
+	if err != nil {
+		if errors.Is(pgx.ErrNoRows, err) {
+			tx.Rollback(ctx)
+			return nil, models.ErrPositionNotFound
+		}
+		r.logger.Errorf("Error retrieving position ID: %v", err)
+		tx.Rollback(ctx)
+		return nil, err
+	}
+
+	for _, question := range questions {
+		insertQuery := `
+		INSERT INTO questions (name, position_public_id, position_id, read_duration, answer_duration)
+		VALUES ($1, $2, $3, $4, $5) RETURNING public_id
+		`
+		err = tx.QueryRow(
+			ctx,
+			insertQuery,
+			question.Name,
+			positionPublicID,
+			positionID,
+			question.ReadDuration,
+			question.AnswerDuration).Scan(&question.PublicID)
+		if err != nil {
+			r.logger.Errorf("Error adding question to position: %v", err)
+			tx.Rollback(ctx)
+			return nil, err
+		}
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		r.logger.Errorf("Error occurred while committing transaction: %v", err)
+		return nil, err
+	}
+
+	return questions, nil
 }

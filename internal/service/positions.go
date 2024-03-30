@@ -100,3 +100,7 @@ func (p *positionsService) GetPositionsByCompany(companyID string, pageNum int, 
 func (p *positionsService) GetPositionsByRecruiter(recruiterID string, pageNum int, pageSize int, search string) ([]models.Position, int, error) {
 	return p.positionRepo.GetPositionsByRecruiter(recruiterID, pageNum, pageSize, search)
 }
+
+func (p *positionsService) AddQuestionsToPosition(positionPublicID string, questions []*models.Question) ([]*models.Question, error) {
+	return p.positionRepo.AddQuestionsToPosition(positionPublicID, questions)
+}

@@ -38,6 +38,7 @@ func (h *handler) InitRoutes() *gin.Engine {
 	router.DELETE("/position/:position_public_id/skills", h.DeleteSkillsFromPosition)
 	router.GET("/companies/:company_public_id/positions", h.GetPositionsByCompany)
 	router.GET("/recruiters/:recruiter_public_id/positions", h.GetPositionsByRecruiter)
+	router.POST("/position/:position_public_id/questions", h.AddQuestionsToPosition)
 	// router.PUT("/position", middleware.VerifyToken(h.cfg.Token.TokenSecret), h.UpdatePosition)
 	return router
 }
