@@ -39,6 +39,7 @@ func (h *handler) InitRoutes() *gin.Engine {
 	router.GET("/companies/:company_public_id/positions", h.GetPositionsByCompany)
 	router.GET("/recruiters/:recruiter_public_id/positions", h.GetPositionsByRecruiter)
 	router.POST("/position/:position_public_id/questions", h.AddQuestionsToPosition)
+	router.GET("/position/:position_public_id/questions", h.GetQuestionsToPosition)
 	// router.PUT("/position", middleware.VerifyToken(h.cfg.Token.TokenSecret), h.UpdatePosition)
 	return router
 }

@@ -257,3 +257,28 @@ func (h *handler) AddQuestionsToPosition(c *gin.Context) {
 		Questions:        res,
 	}, nil))
 }
+
+func (h *handler) GetQuestionsToPosition(c *gin.Context) {
+	id := c.Param("position_public_id")
+	err := h.service.PositionService.Exists(id)
+	if err != nil {
+		if errors.Is(err, models.ErrPositionNotFound) {
+			c.JSON(http.StatusNotFound, sendResponse(-1, nil, models.ErrPositionNotFound))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, sendResponse(-1, nil, models.ErrInternalServer))
+		return
+	}
+
+	res, err := h.service.GetPositionQuestions(id)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, sendResponse(-1, nil, models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusCreated, sendResponse(0, Questions{
+		PositionPublicID: id,
+		Questions:        res,
+	}, nil))
+}

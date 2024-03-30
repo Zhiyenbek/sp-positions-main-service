@@ -18,6 +18,7 @@ type PositionService interface {
 	GetPositionsByCompany(companyID string, pageNum int, pageSize int, search string) ([]models.Position, int, error)
 	GetPositionsByRecruiter(recruiterID string, pageNum int, pageSize int, search string) ([]models.Position, int, error)
 	AddQuestionsToPosition(positionPublicID string, questions []*models.Question) ([]*models.Question, error)
+	GetPositionQuestions(positionPublicID string) ([]*models.Question, error)
 }
 type Service struct {
 	PositionService

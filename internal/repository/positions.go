@@ -676,3 +676,44 @@ func (r *positionRepository) AddQuestionsToPosition(positionPublicID string, que
 
 	return questions, nil
 }
+
+func (r *positionRepository) GetPositionQuestions(positionPublicID string) ([]*models.Question, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+
+	query := `
+		SELECT name, public_id, read_duration, answer_duration
+		FROM questions
+		WHERE position_public_id = $1
+	`
+
+	rows, err := r.db.Query(ctx, query, positionPublicID)
+	if err != nil {
+		r.logger.Errorf("Error occurred while querying questions for position: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	questions := []*models.Question{}
+	for rows.Next() {
+		var question models.Question
+		err := rows.Scan(
+			&question.Name,
+			&question.PublicID,
+			&question.ReadDuration,
+			&question.AnswerDuration,
+		)
+		if err != nil {
+			r.logger.Errorf("Error scanning question row: %v", err)
+			return nil, err
+		}
+		questions = append(questions, &question)
+	}
+
+	if err = rows.Err(); err != nil {
+		r.logger.Errorf("Error occurred while iterating over question rows: %v", err)
+		return nil, err
+	}
+
+	return questions, nil
+}
