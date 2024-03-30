@@ -32,7 +32,7 @@ func (r *positionRepository) GetAllPositions(search string, pageNum, pageSize in
 	offset := (pageNum - 1) * pageSize
 	// Query to retrieve positions for the current page
 	query := `
-		SELECT p.public_id, p.name, p.status, c.public_id, c.name, c.logo
+		SELECT p.public_id, p.name, p.status, c.public_id, c.description, p.description, c.name, c.logo
 		FROM positions AS p
 		INNER JOIN recruiters r ON p.recruiter_public_id = r.public_id
 		INNER JOIN companies c ON r.company_public_id = c.public_id
@@ -57,6 +57,8 @@ func (r *positionRepository) GetAllPositions(search string, pageNum, pageSize in
 			&position.Name,
 			&position.Status,
 			&company.PublicID,
+			&company.Description,
+			&position.Description,
 			&company.Name,
 			&company.Logo,
 		)
