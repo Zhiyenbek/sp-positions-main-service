@@ -108,10 +108,11 @@ func (r *positionRepository) GetPositionInterviews(publicID string, pageNum int,
 	defer cancel()
 
 	query := `
-		SELECT i.public_id, i.results
+		SELECT i.public_id, i.results, c.public_id
 		FROM interviews i
 		INNER JOIN user_interviews ui ON ui.interview_id = i.id
 		INNER JOIN positions p ON p.id = ui.position_id
+		INNER JOIN candidates c ON c.id = ui.candidate_id
 		WHERE p.public_id = $1
 		GROUP BY i.public_id, i.results
 		LIMIT $2 OFFSET $3;
@@ -130,6 +131,7 @@ func (r *positionRepository) GetPositionInterviews(publicID string, pageNum int,
 		err = rows.Scan(
 			&result.PublicID,
 			&resultBytes,
+			&result.CandidatePublicID,
 		)
 		if err != nil {
 			r.logger.Errorf("Error occurred while retrieving interview result: %v", err)

@@ -49,6 +49,7 @@ func (p *positionsService) GetPositionInterviews(publicID string, pageNum int, p
 				return nil, 0, err
 			}
 			interview.PublicID = r.PublicID
+			interview.CandidatePublicID = r.CandidatePublicID
 			interview.Result = *result
 			res = append(res, interview)
 		} else {
