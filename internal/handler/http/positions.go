@@ -306,3 +306,34 @@ func (h *handler) CreateInterview(c *gin.Context) {
 		PublicID: publicID,
 	}, nil))
 }
+
+func (h *handler) DeleteQuestion(c *gin.Context) {
+	publicID := c.Param("question_public_id")
+
+	err := h.service.PositionService.DeleteQuestion(publicID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, sendResponse(-1, nil, models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, sendResponse(0, nil, nil))
+}
+
+func (h *handler) UpdateQuestion(c *gin.Context) {
+	publicID := c.Param("question_public_id")
+	req := &models.Question{}
+	if err := c.ShouldBindWith(req, binding.JSON); err != nil {
+		h.logger.Errorf("Failed to parse request body when deleting skills from position: %s\n", err.Error())
+		c.JSON(http.StatusBadRequest, sendResponse(-1, nil, models.ErrInvalidInput))
+		return
+	}
+	req.PublicID = publicID
+	res, err := h.service.PositionService.UpdateQuestion(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, sendResponse(-1, nil, models.ErrInternalServer))
+		return
+	}
+
+	c.JSON(http.StatusOK, sendResponse(0, res, nil))
+}

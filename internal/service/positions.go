@@ -113,3 +113,11 @@ func (p *positionsService) GetPositionQuestions(positionPublicID string) ([]*mod
 func (p *positionsService) CreateInterview(positionPublicID, candidatePublicID string) (string, error) {
 	return p.positionRepo.CreateInterview(positionPublicID, candidatePublicID)
 }
+
+func (p *positionsService) DeleteQuestion(publicID string) error {
+	return p.positionRepo.DeleteQuestion(publicID)
+}
+
+func (p *positionsService) UpdateQuestion(q *models.Question) (*models.Question, error) {
+	return p.positionRepo.UpdateQuestion(q)
+}

@@ -39,6 +39,8 @@ func (h *handler) InitRoutes() *gin.Engine {
 	router.GET("/companies/:company_public_id/positions", h.GetPositionsByCompany)
 	router.GET("/recruiters/:recruiter_public_id/positions", h.GetPositionsByRecruiter)
 	router.POST("/position/:position_public_id/questions", h.AddQuestionsToPosition)
+	router.PUT("/question/:question_public_id", h.UpdateQuestion)
+	router.DELETE("/question/:question_public_id", h.DeleteQuestion)
 	router.GET("/position/:position_public_id/questions", h.GetQuestionsToPosition)
 	router.POST("/position/:position_public_id/interview", middleware.VerifyToken(h.cfg.Token.TokenSecret, h.logger), h.CreateInterview)
 	// router.PUT("/position", middleware.VerifyToken(h.cfg.Token.TokenSecret), h.UpdatePosition)

@@ -20,6 +20,8 @@ type PositionService interface {
 	AddQuestionsToPosition(positionPublicID string, questions []*models.Question) ([]*models.Question, error)
 	GetPositionQuestions(positionPublicID string) ([]*models.Question, error)
 	CreateInterview(positionPublicID, candidatePublicID string) (string, error)
+	DeleteQuestion(publicID string) error
+	UpdateQuestion(q *models.Question) (*models.Question, error)
 }
 type Service struct {
 	PositionService

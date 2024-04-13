@@ -774,3 +774,47 @@ func (r *positionRepository) CreateInterview(positionPublicID, candidatePublicID
 
 	return publicID, nil
 }
+
+func (r *positionRepository) DeleteQuestion(publicID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+
+	query := `
+		DELETE from question where public_id = $1
+	`
+
+	_, err := r.db.Exec(ctx, query, publicID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *positionRepository) UpdateQuestion(q *models.Question) (*models.Question, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+
+	query := `
+		UPDATE questions
+		SET
+			name = COALESCE($2, name),
+			read_duration = COALESCE($3, read_duration),
+			answer_duration = COALESCE($4, answer_duration)
+			RETURNING name, public_id, read_duration, answer_duration
+			`
+
+	var updatedQuestion models.Question
+	err := r.db.QueryRow(ctx, query, q.PublicID, q.Name, q.ReadDuration, q.AnswerDuration).Scan(
+		&updatedQuestion.Name,
+		&updatedQuestion.PublicID,
+		&updatedQuestion.ReadDuration,
+		&updatedQuestion.AnswerDuration,
+	)
+	if err != nil {
+		r.logger.Errorf("Error occurred while updating question: %v", err)
+		return nil, err
+	}
+
+	return &updatedQuestion, nil
+}
