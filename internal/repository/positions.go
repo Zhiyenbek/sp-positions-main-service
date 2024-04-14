@@ -114,7 +114,7 @@ func (r *positionRepository) GetPositionInterviews(publicID string, pageNum int,
 		INNER JOIN positions p ON p.id = ui.position_id
 		INNER JOIN candidates c ON c.id = ui.candidate_id
 		WHERE p.public_id = $1
-		GROUP BY i.public_id, i.results
+		GROUP BY i.public_id, i.results, c.public_id
 		LIMIT $2 OFFSET $3;
 	`
 	offset := (pageNum - 1) * pageSize
@@ -780,11 +780,12 @@ func (r *positionRepository) DeleteQuestion(publicID string) error {
 	defer cancel()
 
 	query := `
-		DELETE from question where public_id = $1
+		DELETE from questions where public_id = $1
 	`
 
 	_, err := r.db.Exec(ctx, query, publicID)
 	if err != nil {
+		r.logger.Error("could not delete question", err)
 		return err
 	}
 
@@ -799,8 +800,9 @@ func (r *positionRepository) UpdateQuestion(q *models.Question) (*models.Questio
 		UPDATE questions
 		SET
 			name = COALESCE($2, name),
-			read_duration = COALESCE($3, read_duration),
-			answer_duration = COALESCE($4, answer_duration)
+			read_duration = COALESCE(NULLIF($3, 0), read_duration),
+			answer_duration = COALESCE(NULLIF($4, 0), answer_duration)
+			WHERE public_id = $1
 			RETURNING name, public_id, read_duration, answer_duration
 			`
 
@@ -817,4 +819,24 @@ func (r *positionRepository) UpdateQuestion(q *models.Question) (*models.Questio
 	}
 
 	return &updatedQuestion, nil
+}
+
+func (r *positionRepository) QuestionExists(publicId string) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.TimeOut)
+	defer cancel()
+	var exists bool
+
+	query := `SELECT EXISTS (
+		SELECT 1
+		FROM questions
+		WHERE public_id = $1
+	  ) AS question_exists;`
+
+	err := r.db.QueryRow(ctx, query, publicId).Scan(&exists)
+	if err != nil {
+		r.logger.Error("could not check question existence", err)
+		return false, err
+	}
+
+	return exists, nil
 }

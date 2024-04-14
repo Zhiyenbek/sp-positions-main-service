@@ -10,4 +10,5 @@ var (
 	ErrUserNotFound        = errors.New("USER_NOT_FOUND")
 	ErrPermissionDenied    = errors.New("PERMISSION_DENIED")
 	ErrPositionNotFound    = errors.New("POSITION_NOT_FOUND")
+	ErrQuestionNotFound    = errors.New("QUESTION_NOT_FOUND")
 )

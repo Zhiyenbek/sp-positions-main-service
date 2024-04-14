@@ -22,6 +22,7 @@ type PositionRepository interface {
 	CreateInterview(positionPublicID, candidatePublicID string) (string, error)
 	DeleteQuestion(publicID string) error
 	UpdateQuestion(q *models.Question) (*models.Question, error)
+	QuestionExists(publicId string) (bool, error)
 }
 
 type CompanyRepository interface {

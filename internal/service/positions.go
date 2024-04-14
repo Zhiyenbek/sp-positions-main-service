@@ -115,9 +115,26 @@ func (p *positionsService) CreateInterview(positionPublicID, candidatePublicID s
 }
 
 func (p *positionsService) DeleteQuestion(publicID string) error {
+	exists, err := p.positionRepo.QuestionExists(publicID)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return models.ErrQuestionNotFound
+	}
+
 	return p.positionRepo.DeleteQuestion(publicID)
 }
 
 func (p *positionsService) UpdateQuestion(q *models.Question) (*models.Question, error) {
+	exists, err := p.positionRepo.QuestionExists(q.PublicID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !exists {
+		return nil, models.ErrQuestionNotFound
+	}
 	return p.positionRepo.UpdateQuestion(q)
 }

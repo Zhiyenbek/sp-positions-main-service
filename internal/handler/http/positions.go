@@ -313,6 +313,10 @@ func (h *handler) DeleteQuestion(c *gin.Context) {
 	err := h.service.PositionService.DeleteQuestion(publicID)
 
 	if err != nil {
+		if errors.Is(err, models.ErrQuestionNotFound) {
+			c.JSON(http.StatusNotFound, sendResponse(-1, nil, models.ErrQuestionNotFound))
+			return
+		}
 		c.JSON(http.StatusInternalServerError, sendResponse(-1, nil, models.ErrInternalServer))
 		return
 	}
@@ -331,6 +335,10 @@ func (h *handler) UpdateQuestion(c *gin.Context) {
 	req.PublicID = publicID
 	res, err := h.service.PositionService.UpdateQuestion(req)
 	if err != nil {
+		if errors.Is(err, models.ErrQuestionNotFound) {
+			c.JSON(http.StatusNotFound, sendResponse(-1, nil, models.ErrQuestionNotFound))
+			return
+		}
 		c.JSON(http.StatusInternalServerError, sendResponse(-1, nil, models.ErrInternalServer))
 		return
 	}
